@@ -17,10 +17,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const donorName  = body.donator_name  || body.name       || "Anonymous";
-    const amount     = body.amount        || body.nominal     || 0;
-    const message    = body.message       || body.pesan       || "";
-    const currency   = body.currency      || "IDR";
+    const donorName  = body.donator_name  || "Anonymous";
+    const amount     = body.amount_raw    || body.etc?.amount_to_display || 0;
+    const message    = body.message       || "";
+    const currency   = "IDR";
 
     const payload = {
       donorName,
