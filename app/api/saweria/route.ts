@@ -8,6 +8,7 @@ const SAWERIA_TOKEN   = process.env.SAWERIA_TOKEN;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log("Saweria body:", JSON.stringify(body));
 
     if (SAWERIA_TOKEN) {
       const token = req.headers.get("x-saweria-token");
@@ -27,6 +28,9 @@ export async function POST(req: NextRequest) {
       message,
       currency,
     };
+
+    console.log("API Key prefix:", ROBLOX_API_KEY?.substring(0, 8));
+    console.log("Universe ID:", UNIVERSE_ID);
 
     const robloxRes = await fetch(
       `https://apis.roblox.com/messaging-service/v1/universes/${UNIVERSE_ID}/topics/${TOPIC}`,
