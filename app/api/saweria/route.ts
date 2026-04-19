@@ -42,9 +42,12 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    const robloxBody = await robloxRes.text();
+    console.log("Roblox status:", robloxRes.status);
+    console.log("Roblox body:", robloxBody);
+
     if (!robloxRes.ok) {
-      const err = await robloxRes.text();
-      return NextResponse.json({ error: "Roblox API failed", detail: err }, { status: 500 });
+      return NextResponse.json({ error: "Roblox API failed", status: robloxRes.status, detail: robloxBody }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
