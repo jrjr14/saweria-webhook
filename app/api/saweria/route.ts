@@ -10,12 +10,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log("Saweria body:", JSON.stringify(body));
 
-    if (SAWERIA_TOKEN) {
-      const token = req.headers.get("x-saweria-token");
-      if (token !== SAWERIA_TOKEN) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-    }
+    // if (SAWERIA_TOKEN) {
+    //   const token = req.headers.get("x-saweria-token");
+    //   if (token !== SAWERIA_TOKEN) {
+    //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    //   }
+    // }
 
     const donorName  = body.donator_name  || "Anonymous";
     const amount     = body.amount_raw    || body.etc?.amount_to_display || 0;
