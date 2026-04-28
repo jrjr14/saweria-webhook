@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import games from "@/games.json";
+import fs from "fs";
+import path from "path";
 
 const SAWERIA_TOKEN = process.env.SAWERIA_TOKEN;
 
@@ -8,6 +9,16 @@ type GameConfig = {
     topic: string;
 };
 
+type GamesConfig = {
+    games: Record<string, GameConfig>;
+};
+
+function loadGames(): GamesConfig {
+    const filePath = path.join(process.cwd(), "games.json");
+    const raw = fs.readFileSync(filePath, "utf-8");
+    return JSON.parse(raw) as GamesConfig;
+}
+
 export async function POST(req: NextRequest) {
     try {
         const gameId = req.nextUrl.searchParams.get("gameId");
@@ -15,7 +26,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing gameId" }, { status: 400 });
         }
 
-        const gameConfig = (games.games as Record<string, GameConfig>)[gameId];
+        const { games } = loadGames();
+        const gameConfig = games[gameId];
         if (!gameConfig) {
             return NextResponse.json({ error: "Unknown gameId" }, { status: 404 });
         }
