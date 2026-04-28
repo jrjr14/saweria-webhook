@@ -1,65 +1,75 @@
 import { NextRequest, NextResponse } from "next/server";
+import games from "@/games.json";
 
-const ROBLOX_API_KEY  = process.env.ROBLOX_API_KEY;
-const UNIVERSE_ID     = "9841882273";
-const TOPIC           = "SaweriaDonation";
-const SAWERIA_TOKEN   = process.env.SAWERIA_TOKEN;
+const SAWERIA_TOKEN = process.env.SAWERIA_TOKEN;
+
+type GameConfig = {
+    universeId: string;
+    topic: string;
+};
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    console.log("Saweria body:", JSON.stringify(body));
+    try {
+        const gameId = req.nextUrl.searchParams.get("gameId");
+        if (!gameId) {
+            return NextResponse.json({ error: "Missing gameId" }, { status: 400 });
+        }
 
-    // if (SAWERIA_TOKEN) {
-    //   const token = req.headers.get("x-saweria-token");
-    //   if (token !== SAWERIA_TOKEN) {
-    //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    //   }
-    // }
+        const gameConfig = (games.games as Record<string, GameConfig>)[gameId];
+        if (!gameConfig) {
+            return NextResponse.json({ error: "Unknown gameId" }, { status: 404 });
+        }
 
-    const donorName  = body.donator_name  || "Anonymous";
-    const amount     = body.amount_raw    || body.etc?.amount_to_display || 0;
-    const message    = body.message       || "";
-    const currency   = "IDR";
+        const apiKey = process.env[`ROBLOX_API_KEY_${gameId.toUpperCase()}`];
+        if (!apiKey) {
+            return NextResponse.json({ error: "API key not configured for this game" }, { status: 500 });
+        }
 
-    const payload = {
-      donorName,
-      amount,
-      message,
-      currency,
-    };
+        if (SAWERIA_TOKEN) {
+            const token = req.headers.get("x-saweria-token");
+            if (token !== SAWERIA_TOKEN) {
+                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            }
+        }
 
-    console.log("API Key prefix:", ROBLOX_API_KEY?.substring(0, 8));
-    console.log("Universe ID:", UNIVERSE_ID);
+        const body = await req.json();
 
-    const robloxRes = await fetch(
-      `https://apis.roblox.com/messaging-service/v1/universes/${UNIVERSE_ID}/topics/${TOPIC}`,
-      {
-        method: "POST",
-        headers: {
-          "x-api-key":    ROBLOX_API_KEY!,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: JSON.stringify(payload),
-        }),
-      }
-    );
+        const payload = {
+            donorName : body.donator_name                || "Anonymous",
+            amount    : body.amount_raw                  || body.etc?.amount_to_display || 0,
+            message   : body.message                     || "",
+            currency  : "IDR",
+        };
 
-    const robloxBody = await robloxRes.text();
-    console.log("Roblox status:", robloxRes.status);
-    console.log("Roblox body:", robloxBody);
+        const robloxRes = await fetch(
+            `https://apis.roblox.com/messaging-service/v1/universes/${gameConfig.universeId}/topics/${gameConfig.topic}`,
+            {
+                method : "POST",
+                headers: {
+                    "x-api-key"   : apiKey,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    message: JSON.stringify(payload),
+                }),
+            }
+        );
 
-    if (!robloxRes.ok) {
-      return NextResponse.json({ error: "Roblox API failed", status: robloxRes.status, detail: robloxBody }, { status: 500 });
+        const robloxBody = await robloxRes.text();
+
+        if (!robloxRes.ok) {
+            return NextResponse.json(
+                { error: "Roblox API failed", status: robloxRes.status, detail: robloxBody },
+                { status: 500 }
+            );
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (e) {
+        return NextResponse.json({ error: "Internal error", detail: String(e) }, { status: 500 });
     }
-
-    return NextResponse.json({ success: true });
-  } catch (e) {
-    return NextResponse.json({ error: "Internal error", detail: String(e) }, { status: 500 });
-  }
 }
 
 export async function GET() {
-  return NextResponse.json({ status: "ok" });
+    return NextResponse.json({ status: "ok" });
 }
