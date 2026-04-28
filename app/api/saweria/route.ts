@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import games from "../../../games.json";
+import games from "@/games.json";
 
 const SAWERIA_TOKEN = process.env.SAWERIA_TOKEN;
 
